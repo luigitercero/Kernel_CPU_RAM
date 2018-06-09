@@ -82,7 +82,6 @@
     static int meminfo_proc_show(struct seq_file *m, void *v)
     {
 	struct sysinfo i;
-	int lru;
 	unsigned long porcentaje = 0;
 	/*
 	 * display in kilobytes.
@@ -94,29 +93,22 @@
 	/***********************************************/
 	/*			CPU			*/
 	/***********************************************/
-	int x;
+	int x = 0;
 	u64 user, nice, system, idle, iowait, irq, softirq, steal;
 	u64 guest, guest_nice;
 	u64 sum = 0;
-	u64 sum_softirq = 0;
-	
-
 	u64 tiempo = 0;
 	u64 Total_CPU_time_since_boot  = 0;
 	u64 Total_CPU_Idle_time_since_boot = 0;	
 	u64 Total_CPU_usage_time_since_boot = 0; 
-	u64 Total_CPU_percentage = 0;
-	
-	
-	float pruebas;
-
-	unsigned int per_softirq_sums[NR_SOFTIRQS] = {0};
+	unsigned long Total_CPU_percentage = 0;
 	struct timespec64 boottime;
 
 	user = nice = system = idle = iowait =
 		irq = softirq = steal = 0;
 	guest = guest_nice = 0;
 	getboottime(&boottime);
+	seq_printf(m,"{");
 	for_each_possible_cpu(x) {
 		user += kcpustat_cpu(x).cpustat[CPUTIME_USER];//normal processes executing in user mode
 		nice += kcpustat_cpu(x).cpustat[CPUTIME_NICE];//niced processes executing in user mode
@@ -129,45 +121,32 @@
 		guest += kcpustat_cpu(x).cpustat[CPUTIME_GUEST];//running a normal guest
 		guest_nice += kcpustat_cpu(x).cpustat[CPUTIME_GUEST_NICE];//running a niced guest
 		sum += kstat_cpu_irqs_sum(x);
-		
-
-		
-		
-	}
-
-
-	porcentaje = (i.freeram * 100)/i.totalram;
-	seq_printf(m,
-		"\n\"porcentaje de ram\":%8lu,"
-		"\"raM libre\":%8lu,"
-		"\"ram Total\":%8lu,",
-		porcentaje,
-		i.freeram*4, 
-		i.totalram*4
-		);
-		seq_printf(m, "}\n");
-
-		Total_CPU_time_since_boot  = user + nice + system + idle + iowait + irq + softirq + steal;
-
+		Total_CPU_time_since_boot = user + nice + system + idle + iowait + irq + softirq + steal ;
 		tiempo = Total_CPU_time_since_boot + guest + guest_nice;
 		Total_CPU_Idle_time_since_boot = idle + iowait;
 		Total_CPU_usage_time_since_boot =  Total_CPU_time_since_boot - Total_CPU_Idle_time_since_boot;
-		Total_CPU_percentage = Total_CPU_usage_time_since_boot/Total_CPU_time_since_boot * 100 ;
-		seq_printf(m, "{\"tiempocpu\":");
+		Total_CPU_percentage = Total_CPU_usage_time_since_boot * 100 / Total_CPU_time_since_boot   ;
+		seq_printf(m, "\"tiempo cpu\":");
 		seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(tiempo));
 		seq_printf(m, ",\"idle\":");
 		seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(idle));
-
-		seq_printf(m, "\"Total_CPU_time_since_boot\":");
-		seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(Total_CPU_time_since_boot));
-		seq_printf(m, "\"Total_CPU_Idle_time_since_boot\":");
-		seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(Total_CPU_Idle_time_since_boot));
-		seq_printf(m, "\"Total_CPU_usage_time_since_boot\":");
+		seq_printf(m, ",\"Uso de CPU\":");
 		seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(Total_CPU_usage_time_since_boot));
-		//seq_printf(m, ",\"Porcentaje de uso\":");
-		//seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(Total_CPU_percentage));
+		seq_printf(m, ",\"Cpu de sicronizacion de bot\":");
+		seq_put_decimal_ull(m, ' ', cputime64_to_clock_t(Total_CPU_usage_time_since_boot));
+		seq_printf(m,",\"Porcentaje de uso CPU\":%8lu,\n",Total_CPU_percentage);
+	}
 
-	
+		porcentaje = (i.freeram * 100)/i.totalram;
+		seq_printf(m,
+		"\"porcentaje de ram\":%8lu,"
+		"\"raM libre\":%8lu,"
+		"\"ram Total\":%8lu,",
+		porcentaje,
+		i.freeram * 4, 
+		i.totalram * 4
+		);
+		seq_printf(m, "}\n");	
         return 0;
     }
 
