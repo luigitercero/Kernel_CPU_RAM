@@ -1,0 +1,1 @@
+cmd_/home/luigitercero/Desktop/cpu/cpu.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/luigitercero/Desktop/cpu/cpu.ko /home/luigitercero/Desktop/cpu/cpu.o /home/luigitercero/Desktop/cpu/cpu.mod.o
